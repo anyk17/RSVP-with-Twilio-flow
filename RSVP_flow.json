@@ -1,0 +1,389 @@
+{
+  "description": "A New Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "Welcome",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingConversationMessage"
+        },
+        {
+          "event": "incomingRequest"
+        },
+        {
+          "event": "incomingParent"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "name": "Welcome",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_confirmation",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -40,
+          "y": 170
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "We're happy you're interested in our party. Will you be joining us?\n \n1️. Yes, I won't miss it! 🥳\n2️. No, I can't make it 😔",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "split_confirmation",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "answered_yes",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Yes",
+              "arguments": [
+                "{{widgets.Welcome.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "1, y, yes, Yes"
+            }
+          ]
+        },
+        {
+          "next": "function_no",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "No",
+              "arguments": [
+                "{{widgets.Welcome.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "2, no, No"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.Welcome.inbound.Body}}",
+        "offset": {
+          "x": -20,
+          "y": 390
+        }
+      }
+    },
+    {
+      "name": "function_no",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "answered_no",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSbc7152e6e28b90da06650dd918958aea",
+        "environment_sid": "ZEfb523ef7eaadb571363de069858762c9",
+        "offset": {
+          "x": 150,
+          "y": 610
+        },
+        "function_sid": "ZHb4649f71e762d843d1b252e14421f42e",
+        "parameters": [
+          {
+            "value": "{{widgets.Welcome.inbound.From}}widgets.Welcome",
+            "key": "From"
+          }
+        ],
+        "url": "https://rsvp-6220.twil.io/no"
+      }
+    },
+    {
+      "name": "answered_no",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 180,
+          "y": 830
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Ouch! We'll miss you. Thanks for confirming, have a good day."
+      }
+    },
+    {
+      "name": "answered_yes",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_plus_one",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -170,
+          "y": 610
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "That's awesome! Will you be bringing a +1?",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "split_plus_one",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "message_with_plus_one",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Yes",
+              "arguments": [
+                "{{widgets.answered_yes.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "yes, Yes, y, Y"
+            }
+          ]
+        },
+        {
+          "next": "message_without_plus_one",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "No",
+              "arguments": [
+                "{{widgets.answered_yes.inbound.Body}}"
+              ],
+              "type": "matches_any_of",
+              "value": "N, No, no"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.answered_yes.inbound.Body}}",
+        "offset": {
+          "x": -520,
+          "y": 660
+        }
+      }
+    },
+    {
+      "name": "message_with_plus_one",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "ask_for_email",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -680,
+          "y": 900
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "The more the marrier 🥳"
+      }
+    },
+    {
+      "name": "message_without_plus_one",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "ask_for_email",
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -340,
+          "y": 890
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "No worries, we'll have a great time"
+      }
+    },
+    {
+      "name": "ask_for_email",
+      "type": "send-and-wait-for-reply",
+      "transitions": [
+        {
+          "next": "split_email",
+          "event": "incomingMessage"
+        },
+        {
+          "event": "timeout"
+        },
+        {
+          "event": "deliveryFailure"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -490,
+          "y": 1110
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "body": "Now, to get you in the event, please write down your personal email 🙏🏽",
+        "timeout": "3600"
+      }
+    },
+    {
+      "name": "split_email",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "ask_for_email",
+          "event": "noMatch"
+        },
+        {
+          "next": "function_yes",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "Regex",
+              "arguments": [
+                "{{widgets.ask_for_email.inbound.Body}}"
+              ],
+              "type": "regex",
+              "value": "^\\S+@\\S+$"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.ask_for_email.inbound.Body}}",
+        "offset": {
+          "x": -220,
+          "y": 1310
+        }
+      }
+    },
+    {
+      "name": "function_yes",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "bye",
+          "event": "success"
+        },
+        {
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSbc7152e6e28b90da06650dd918958aea",
+        "environment_sid": "ZEfb523ef7eaadb571363de069858762c9",
+        "offset": {
+          "x": 230,
+          "y": 1130
+        },
+        "function_sid": "ZH6566fc16ee102ce21f8e545cf0566ae7",
+        "parameters": [
+          {
+            "value": "{{widgets.Welcome.inbound.From}}widgets.Welcome",
+            "key": "From"
+          }
+        ],
+        "url": "https://rsvp-6220.twil.io/yes"
+      }
+    },
+    {
+      "name": "bye",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 230,
+          "y": 1360
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "to": "{{contact.channel.address}}",
+        "body": "Thank you! Go get ready to have fun 😎"
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}
